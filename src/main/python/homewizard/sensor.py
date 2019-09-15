@@ -21,6 +21,7 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.entity import Entity
 from homeassistant.components.sensor import PLATFORM_SCHEMA
+from homeassistant.components.binary_sensor import BinarySensorDevice
 
 import logging
 import voluptuous as vol
@@ -34,6 +35,7 @@ from . import (
 
 _LOGGER = logging.getLogger(__name__)
 HUMIDITY_UNIT = '%'
+DEVICE_CLASS_SMOKE = "smoke"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST): cv.string,
@@ -45,9 +47,11 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     from . import HomeWizard
 
     hw = HomeWizard(config.get(CONF_HOST), config.get(CONF_PASSWORD))
+
     thermometers = hw.get_thermometers()
     heatlink = hw.get_heatlink()
     energylink = hw.get_energylink()
+    smoke = hw.get_smoke_sensor()
 
     add_entities(TemperatureSensor(data, hw) for data in thermometers)
     add_entities(HygroSensor(data, hw) for data in thermometers)
@@ -55,7 +59,8 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     add_entities([
         WaterTemperatureSensor("CV", heatlink, hw),
         WaterPressureSensor("CV", heatlink, hw),
-        PowerConsumptionSensor("Verbruik", energylink, hw)
+        PowerConsumptionSensor("Verbruik", energylink, hw),
+        SmokeSensor("Rook", smoke, hw)
     ])
 
 
@@ -231,3 +236,35 @@ class PowerConsumptionSensor(Entity):
     @property
     def device_class(self) -> Optional[str]:
         return DEVICE_CLASS_POWER
+
+
+class SmokeSensor(BinarySensorDevice):
+    def __init__(self, name, data, hw):
+        self._name = name
+        self._data = data
+        self._hw = hw
+        self._state = None
+        self.set()
+
+    def update(self):
+        self._hw.update()
+        self.set()
+
+    def set(self):
+        smoke = self._hw.get_smoke_sensor()
+        self._state = False
+        if smoke is not None:
+            if smoke['status'] is not None:
+                self._state = True
+
+    @property
+    def name(self) -> Optional[str]:
+        return self._name
+
+    @property
+    def is_on(self) -> bool:
+        return self._state
+
+    @property
+    def device_class(self) -> Optional[str]:
+        return DEVICE_CLASS_SMOKE

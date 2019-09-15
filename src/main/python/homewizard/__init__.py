@@ -55,6 +55,11 @@ class HomeWizard:
     def heatlink_set_temperature(self, temperature):
         self.call("/hl/0/settarget/{0}".format(temperature))
 
+    def get_smoke_sensor(self):
+        for s in self._sensors['response']['kakusensors']:
+            if s['type'] == "smoke":
+                return s
+
 
 class Heatlink:
     def __init__(self, data, hw):
