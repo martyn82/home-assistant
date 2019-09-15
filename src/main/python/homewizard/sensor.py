@@ -35,6 +35,7 @@ from . import (
 
 _LOGGER = logging.getLogger(__name__)
 HUMIDITY_UNIT = '%'
+GAS_UNIT = 'm³'
 DEVICE_CLASS_SMOKE = "smoke"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -59,7 +60,8 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     add_entities([
         WaterTemperatureSensor("CV", heatlink, hw),
         WaterPressureSensor("CV", heatlink, hw),
-        PowerConsumptionSensor("Verbruik", energylink, hw),
+        PowerConsumptionSensor("Elektra", energylink, hw),
+        GasConsumptionSensor("Gas", energylink, hw),
         SmokeSensor("Rook", smoke, hw)
     ])
 
@@ -232,6 +234,38 @@ class PowerConsumptionSensor(Entity):
     @property
     def unit_of_measurement(self) -> str:
         return POWER_WATT
+
+    @property
+    def device_class(self) -> Optional[str]:
+        return DEVICE_CLASS_POWER
+
+
+class GasConsumptionSensor(Entity):
+    def __init__(self, name, data, hw):
+        self._el = Energylink(data, hw)
+        self._name = name
+        self._data = data
+        self._state = None
+        self.set()
+
+    def update(self):
+        self._el.update()
+        self.set()
+
+    def set(self):
+        self._state = round(self._el.info['gas']['lastHour'], 2)
+
+    @property
+    def name(self) -> Optional[str]:
+        return self._name
+
+    @property
+    def state(self) -> str:
+        return self._state
+
+    @property
+    def unit_of_measurement(self) -> str:
+        return GAS_UNIT
 
     @property
     def device_class(self) -> Optional[str]:
