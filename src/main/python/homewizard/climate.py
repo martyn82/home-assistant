@@ -30,6 +30,7 @@ import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 
 from typing import Any, Dict, List, Optional
+from . import Heatlink
 
 SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE
 SUPPORT_MODES = [HVAC_MODE_HEAT, HVAC_MODE_OFF]
@@ -59,42 +60,6 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     add_entities([
         Thermostat(name, heatlink, hw)
     ])
-
-
-class Heatlink:
-    def __init__(self, data, hw):
-        self._hw = hw
-        self._data = data
-
-    def update(self) -> None:
-        """
-        Heatlink data:
-            pump: on|off        # heating pump
-            heating: on|off     # burner on/off
-            dhw: on|off         # hot tap water pump
-            rte: float          # read/measured temperature
-            rsp: float          # set temperature on thermostat
-            tte: float          # set temperature on heatlink
-            ttm: float|null     # timer
-            wp: float           # water pressure
-            wte: float          # water temperature
-            ofc: int            # error code (0 = OK)
-            odc: int            # diagnostic code (0 = OK)
-        """
-        _LOGGER.debug("update called")
-        heatlink = self._hw.get_heatlink()
-
-        if heatlink != "error":
-            self._data = heatlink
-        else:
-            _LOGGER.exception("Update failed")
-
-    def set_temperature(self, temperature):
-        self._hw.heatlink_set_temperature(temperature)
-
-    @property
-    def info(self):
-        return self._data
 
 
 class Thermostat(ClimateDevice):

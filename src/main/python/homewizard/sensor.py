@@ -11,9 +11,11 @@ from abc import abstractmethod
 from homeassistant.const import (
     TEMP_CELSIUS,
     PRESSURE_BAR,
+    POWER_WATT,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_PRESSURE,
+    DEVICE_CLASS_POWER,
     CONF_HOST,
     CONF_PASSWORD
 )
@@ -25,7 +27,10 @@ import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 
 from typing import Optional
-from .climate import Heatlink
+from . import (
+    Energylink,
+    Heatlink
+)
 
 _LOGGER = logging.getLogger(__name__)
 HUMIDITY_UNIT = '%'
@@ -42,13 +47,15 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     hw = HomeWizard(config.get(CONF_HOST), config.get(CONF_PASSWORD))
     thermometers = hw.get_thermometers()
     heatlink = hw.get_heatlink()
+    energylink = hw.get_energylink()
 
     add_entities(TemperatureSensor(data, hw) for data in thermometers)
     add_entities(HygroSensor(data, hw) for data in thermometers)
 
     add_entities([
         WaterTemperatureSensor("CV", heatlink, hw),
-        WaterPressureSensor("CV", heatlink, hw)
+        WaterPressureSensor("CV", heatlink, hw),
+        PowerConsumptionSensor("Verbruik", energylink, hw)
     ])
 
 
@@ -60,24 +67,7 @@ class ClimateSensor(Entity):
 
     @abstractmethod
     def update(self):
-        """
-        Thermometer data:
-             name: str              # Name of the sensor
-             model: int             # Model indication
-             lowBattery: yes|no     # Battery indicator
-             version: float         # Version of the device
-             te: float              # Measured temperature
-             hu: float              # Measured humidity
-             te+: float             # Max. measured temp
-             te-: float             # Min. measured temp
-             te+t: str              # Time maximum temp was measured
-             te-t: str              # Time minimum temp was measured
-             hu+: float             # Max. measured humidity
-             hu-: float             # Min. measured humidity
-             hu+t: str              # Time maximum humidity was measured
-             hu-t: str              # Time minimum humidity was measured
-             outside: yes|no        # Whether the sensor is put outside (uncertain)
-        """
+        self._hw.update()
         for m in self._hw.get_thermometers():
             if self._data['id'] == m['id']:
                 self._data = m
@@ -209,3 +199,35 @@ class WaterPressureSensor(Entity):
     @property
     def device_class(self) -> Optional[str]:
         return DEVICE_CLASS_PRESSURE
+
+
+class PowerConsumptionSensor(Entity):
+    def __init__(self, name, data, hw):
+        self._el = Energylink(data, hw)
+        self._name = name
+        self._data = data
+        self._state = None
+        self.set()
+
+    def update(self):
+        self._el.update()
+        self.set()
+
+    def set(self):
+        self._state = round(self._el.info['aggregate']['po'], 1)
+
+    @property
+    def name(self) -> Optional[str]:
+        return self._name
+
+    @property
+    def state(self) -> str:
+        return self._state
+
+    @property
+    def unit_of_measurement(self) -> str:
+        return POWER_WATT
+
+    @property
+    def device_class(self) -> Optional[str]:
+        return DEVICE_CLASS_POWER

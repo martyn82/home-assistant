@@ -19,6 +19,8 @@ def setup(hass, config):
 class HomeWizard:
     def __init__(self, host, password):
         self._base_url = "http://{0}/{1}".format(host, password)
+        self._sensors = None
+        self.update()
 
     def call(self, path):
         try:
@@ -38,13 +40,59 @@ class HomeWizard:
             out = json.loads(r)
             return out
 
+    def update(self):
+        self._sensors = self.call("/get-sensors")
+
     def get_thermometers(self):
-        sensors = self.call("/get-sensors")
-        return sensors['response']['thermometers']
+        return self._sensors['response']['thermometers']
 
     def get_heatlink(self):
-        status = self.call("/get-status")
-        return status['response']['heatlinks'][0]
+        return self._sensors['response']['heatlinks'][0]
+
+    def get_energylink(self):
+        return self._sensors['response']['energylinks'][0]
 
     def heatlink_set_temperature(self, temperature):
         self.call("/hl/0/settarget/{0}".format(temperature))
+
+
+class Heatlink:
+    def __init__(self, data, hw):
+        self._hw = hw
+        self._data = data
+
+    def update(self) -> None:
+        _LOGGER.debug("update called")
+        self._hw.update()
+        heatlink = self._hw.get_heatlink()
+
+        if heatlink != "error":
+            self._data = heatlink
+        else:
+            _LOGGER.exception("Update failed")
+
+    def set_temperature(self, temperature):
+        self._hw.heatlink_set_temperature(temperature)
+
+    @property
+    def info(self):
+        return self._data
+
+
+class Energylink:
+    def __init__(self, data, hw):
+        self._hw = hw
+        self._data = data
+
+    def update(self) -> None:
+        self._hw.update()
+        energylink = self._hw.get_energylink()
+
+        if energylink != "error":
+            self._data = energylink
+        else:
+            _LOGGER.exception("Update failed")
+
+    @property
+    def info(self):
+        return self._data
