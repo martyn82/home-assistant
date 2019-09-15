@@ -53,21 +53,18 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
     hw = HomeWizard(config.get(CONF_HOST), config.get(CONF_PASSWORD))
     heatlink = hw.get_heatlink()
-    add_entities([Heatlink(config.get(CONF_NAME), heatlink, hw)])
+
+    name = config.get(CONF_NAME)
+
+    add_entities([
+        Thermostat(name, heatlink, hw)
+    ])
 
 
-class Heatlink(ClimateDevice):
-    def __init__(self, name, data, hw):
+class Heatlink:
+    def __init__(self, data, hw):
         self._hw = hw
         self._data = data
-        self._name = name
-
-        self._current_temp = None
-        self._current_target = None
-        self._hvac_mode = HVAC_MODE_OFF
-
-        _LOGGER.debug("initialized")
-        self.update()
 
     def update(self) -> None:
         """
@@ -89,21 +86,45 @@ class Heatlink(ClimateDevice):
 
         if heatlink != "error":
             self._data = heatlink
-
-            self._current_temp = round(heatlink['rte'], 1)
-            self._current_target = round(heatlink['tte'], 1)
-
-            if heatlink['heating'] == 'on':
-                self._hvac_mode = HVAC_MODE_HEAT
-            else:
-                self._hvac_mode = HVAC_MODE_OFF
         else:
             _LOGGER.exception("Update failed")
+
+    def set_temperature(self, temperature):
+        self._hw.heatlink_set_temperature(temperature)
+
+    @property
+    def info(self):
+        return self._data
+
+
+class Thermostat(ClimateDevice):
+    def __init__(self, name, data, hw):
+        self._hl = Heatlink(data, hw)
+        self._name = name
+
+        self._current_target = None
+        self._current_temp = None
+        self._hvac_mode = None
+
+        self.set()
+
+    def update(self) -> None:
+        self._hl.update()
+        self.set()
+
+    def set(self):
+        self._current_temp = round(self._hl.info['rte'], 1)
+        self._current_target = round(self._hl.info['tte'], 1)
+
+        if self._hl.info['heating'] == 'on':
+            self._hvac_mode = HVAC_MODE_HEAT
+        else:
+            self._hvac_mode = HVAC_MODE_OFF
 
     def set_temperature(self, **kwargs) -> None:
         target_temp = kwargs.get(ATTR_TEMPERATURE)
         if target_temp is not None:
-            self._hw.heatlink_set_temperature(target_temp)
+            self._hl.set_temperature(target_temp)
             self._current_target = target_temp
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
@@ -123,7 +144,7 @@ class Heatlink(ClimateDevice):
 
     @property
     def device_state_attributes(self) -> Dict[str, Any]:
-        return self._data
+        return self._hl.info
 
     @property
     def temperature_unit(self) -> str:
