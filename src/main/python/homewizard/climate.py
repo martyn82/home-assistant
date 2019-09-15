@@ -14,6 +14,7 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_HEAT,
     HVAC_MODE_OFF
 )
+from . import HomeWizard
 
 """
 configuration.yml
@@ -26,18 +27,14 @@ climate:
 """
 
 import logging
-import json
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 
-from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
 from typing import Any, Dict, List, Optional
 
 SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE
 SUPPORT_MODES = [HVAC_MODE_HEAT, HVAC_MODE_OFF]
 
-DEFAULT_TIMEOUT = 2
 DEFAULT_NAME = "Thermostaat"
 DEFAULT_MIN_TEMP = 7.0
 DEFAULT_MAX_TEMP = 30.0
@@ -52,23 +49,23 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 })
 
 
-def setup_platform(hass, config, add_devices, discovery_info=None):
-    add_devices([Heatlink(config.get(CONF_NAME), config.get(CONF_HOST), config.get(CONF_PASSWORD))])
+def setup_platform(hass, config, add_entities, discovery_info=None):
+    from . import HomeWizard
+
+    hw = HomeWizard(config.get(CONF_HOST), config.get(CONF_PASSWORD))
+    heatlink = hw.get_heatlink()
+    add_entities([Heatlink(config.get(CONF_NAME), heatlink, hw)])
 
 
 class Heatlink(ClimateDevice):
-    def __init__(self, name, host, password):
+    def __init__(self, name, data, hw):
+        self._hw = hw
+        self._data = data
         self._name = name
-
-        base_url = "http://{0}/{1}".format(host, password)
-        self._status_url = base_url + "/get-status"
-        self._set_temp_url = base_url + "/hl/0/settarget/{0}"
 
         self._current_temp = None
         self._current_target = None
         self._hvac_mode = HVAC_MODE_OFF
-
-        self._state = None
 
         _LOGGER.debug("initialized")
         self.update()
@@ -89,11 +86,10 @@ class Heatlink(ClimateDevice):
             odc: int            # diagnostic code (0 = OK)
         """
         _LOGGER.debug("update called")
-        status = self.call(self._status_url)
+        heatlink = self._hw.get_heatlink()
 
-        if status != "error":
-            heatlink = dict(status['response']['heatlinks'][0])
-            self._state = heatlink
+        if heatlink != "error":
+            self._data = heatlink
 
             self._current_temp = round(heatlink['rte'], 1)
             self._current_target = round(heatlink['tte'], 1)
@@ -105,29 +101,10 @@ class Heatlink(ClimateDevice):
         else:
             _LOGGER.exception("Update failed")
 
-    @staticmethod
-    def call(url):
-        try:
-            req = Request(url)
-            response = urlopen(req, timeout=DEFAULT_TIMEOUT)
-
-        except HTTPError as e:
-            _LOGGER.exception("The device couldn't fulfill the request. Error: ", e.code)
-            return "error"
-
-        except URLError as e:
-            _LOGGER.exception("Unable to reach device: ", e.reason)
-            return "error"
-
-        else:
-            r = response.read().decode("utf-8", "ignore")
-            out = json.loads(r)
-            return out
-
     def set_temperature(self, **kwargs) -> None:
         target_temp = kwargs.get(ATTR_TEMPERATURE)
         if target_temp is not None:
-            self.call(self._set_temp_url.format(target_temp))
+            self._hw.heatlink_set_temperature(target_temp)
             self._current_target = target_temp
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
@@ -147,7 +124,7 @@ class Heatlink(ClimateDevice):
 
     @property
     def device_state_attributes(self) -> Dict[str, Any]:
-        return self._state
+        return self._data
 
     @property
     def temperature_unit(self) -> str:
