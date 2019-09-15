@@ -1,12 +1,3 @@
-from homeassistant.const import (
-    TEMP_CELSIUS,
-    DEVICE_CLASS_TEMPERATURE,
-    CONF_HOST,
-    CONF_PASSWORD
-)
-from homeassistant.helpers.entity import Entity
-from homeassistant.components.sensor import PLATFORM_SCHEMA
-
 """
 configuration.yml
 
@@ -15,6 +6,15 @@ sensor:
       host: {HOST_ADDRESS}
       password: {PASSWORD}
 """
+
+from homeassistant.const import (
+    TEMP_CELSIUS,
+    DEVICE_CLASS_TEMPERATURE,
+    CONF_HOST,
+    CONF_PASSWORD
+)
+from homeassistant.helpers.entity import Entity
+from homeassistant.components.sensor import PLATFORM_SCHEMA
 
 import logging
 import voluptuous as vol

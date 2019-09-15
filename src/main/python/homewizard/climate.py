@@ -1,3 +1,13 @@
+"""
+configuration.yml
+
+climate:
+    - platform: homewizard
+      name: {DEVICE_NAME (optional)}
+      host: {HOST_ADDRESS}
+      password: {PASSWORD}
+"""
+
 from homeassistant.const import (
     CONF_NAME,
     CONF_HOST,
@@ -14,17 +24,6 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_HEAT,
     HVAC_MODE_OFF
 )
-from . import HomeWizard
-
-"""
-configuration.yml
-
-climate:
-    - platform: homewizard
-      name: {DEVICE_NAME (optional)}
-      host: {HOST_ADDRESS}
-      password: {PASSWORD}
-"""
 
 import logging
 import voluptuous as vol
