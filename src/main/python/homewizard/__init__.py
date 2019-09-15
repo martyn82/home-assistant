@@ -52,13 +52,13 @@ class HomeWizard:
     def get_energylink(self):
         return self._sensors['response']['energylinks'][0]
 
-    def heatlink_set_temperature(self, temperature):
-        self.call("/hl/0/settarget/{0}".format(temperature))
-
     def get_smoke_sensor(self):
         for s in self._sensors['response']['kakusensors']:
             if s['type'] == "smoke":
                 return s
+
+    def get_lights(self):
+        return self._sensors['response']['switches']
 
 
 class Heatlink:
@@ -77,7 +77,7 @@ class Heatlink:
             _LOGGER.exception("Update failed")
 
     def set_temperature(self, temperature):
-        self._hw.heatlink_set_temperature(temperature)
+        self._hw.call("/hl/0/settarget/{0}".format(temperature))
 
     @property
     def info(self):
