@@ -81,7 +81,7 @@ class Thermostat(ClimateDevice):
         self._current_temp = round(self._hl.info['rte'], 1)
         self._current_target = round(self._hl.info['tte'], 1)
 
-        if self._hl.info['heating'] == 'on':
+        if self._hl.info['pump'] == 'on':
             self._hvac_mode = HVAC_MODE_HEAT
         else:
             self._hvac_mode = HVAC_MODE_OFF
