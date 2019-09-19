@@ -16,6 +16,7 @@ from homeassistant.const import (
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_PRESSURE,
     DEVICE_CLASS_POWER,
+    DEVICE_CLASS_BATTERY,
     CONF_HOST,
     CONF_PASSWORD
 )
@@ -35,6 +36,7 @@ from . import (
 
 _LOGGER = logging.getLogger(__name__)
 HUMIDITY_UNIT = '%'
+BATTERY_UNIT = '%'
 GAS_UNIT = 'm³'
 DEVICE_CLASS_SMOKE = "smoke"
 
@@ -56,10 +58,11 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
     add_entities(TemperatureSensor(data, hw) for data in thermometers)
     add_entities(HygroSensor(data, hw) for data in thermometers)
+    add_entities(BatterySensor(data, hw) for data in thermometers)
 
     add_entities([
-        WaterTemperatureSensor("CV", heatlink, hw),
-        WaterPressureSensor("CV", heatlink, hw),
+        WaterTemperatureSensor("CV temperatuur", heatlink, hw),
+        WaterPressureSensor("CV druk", heatlink, hw),
         PowerConsumptionSensor("Elektra", energylink, hw),
         GasConsumptionSensor("Gas", energylink, hw),
         SmokeSensor("Rook", smoke, hw)
@@ -302,3 +305,40 @@ class SmokeSensor(BinarySensorDevice):
     @property
     def device_class(self) -> Optional[str]:
         return DEVICE_CLASS_SMOKE
+
+class BatterySensor(Entity):
+    def __init__(self, data, hw):
+        self._name = data['name']
+        self._data = data
+        self._hw = hw
+        self._state = None
+        self.set()
+
+    def update(self):
+        self._hw.update()
+        self.set()
+
+    def set(self):
+        meters = self._hw.get_thermometers()
+        for m in meters:
+            if m['id'] == self._data['id']:
+                if m['lowBattery'] == 'no':
+                    self._state = 100
+                else:
+                    self._state = 0
+
+    @property
+    def name(self) -> Optional[str]:
+        return self._name
+
+    @property
+    def state(self) -> str:
+        return self._state
+
+    @property
+    def unit_of_measurement(self) -> str:
+        return BATTERY_UNIT
+
+    @property
+    def device_class(self) -> Optional[str]:
+        return DEVICE_CLASS_BATTERY
