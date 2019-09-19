@@ -22,7 +22,8 @@ from homeassistant.components.climate import (
 from homeassistant.components.climate.const import (
     SUPPORT_TARGET_TEMPERATURE,
     HVAC_MODE_HEAT,
-    HVAC_MODE_OFF
+    CURRENT_HVAC_HEAT,
+    CURRENT_HVAC_IDLE
 )
 
 import logging
@@ -31,9 +32,6 @@ import homeassistant.helpers.config_validation as cv
 
 from typing import Any, Dict, List, Optional
 from . import Heatlink
-
-SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE
-SUPPORT_MODES = [HVAC_MODE_HEAT, HVAC_MODE_OFF]
 
 DEFAULT_NAME = "Thermostaat"
 DEFAULT_MIN_TEMP = 7.0
@@ -69,7 +67,7 @@ class Thermostat(ClimateDevice):
 
         self._current_target = None
         self._current_temp = None
-        self._hvac_mode = None
+        self._hvac_action = None
 
         self.set()
 
@@ -82,9 +80,9 @@ class Thermostat(ClimateDevice):
         self._current_target = round(self._hl.info['tte'], 1)
 
         if self._hl.info['pump'] == 'on':
-            self._hvac_mode = HVAC_MODE_HEAT
+            self._hvac_action = CURRENT_HVAC_HEAT
         else:
-            self._hvac_mode = HVAC_MODE_OFF
+            self._hvac_action = CURRENT_HVAC_IDLE
 
     def set_temperature(self, **kwargs) -> None:
         target_temp = kwargs.get(ATTR_TEMPERATURE)
@@ -93,7 +91,7 @@ class Thermostat(ClimateDevice):
             self._current_target = target_temp
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
-        self._hvac_mode = hvac_mode
+        return None
 
     @property
     def should_poll(self) -> bool:
@@ -101,7 +99,7 @@ class Thermostat(ClimateDevice):
 
     @property
     def supported_features(self) -> int:
-        return SUPPORT_FLAGS
+        return SUPPORT_TARGET_TEMPERATURE
 
     @property
     def name(self) -> str:
@@ -137,8 +135,12 @@ class Thermostat(ClimateDevice):
 
     @property
     def hvac_mode(self) -> str:
-        return self._hvac_mode
+        return HVAC_MODE_HEAT
 
     @property
     def hvac_modes(self) -> List[str]:
-        return SUPPORT_MODES
+        return [HVAC_MODE_HEAT]
+
+    @property
+    def hvac_action(self) -> Optional[str]:
+        return self._hvac_action
