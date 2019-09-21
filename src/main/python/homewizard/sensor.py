@@ -97,6 +97,7 @@ class TemperatureSensor(ClimateSensor):
         self.set()
 
     def set(self):
+        self._name = self._name + "_temp"
         self._state = self._data['te']
 
     @property
@@ -127,6 +128,7 @@ class HygroSensor(ClimateSensor):
         self.set()
 
     def set(self):
+        self._name = self._name + "_hum"
         self._state = self._data['hu']
 
     @property
@@ -306,9 +308,10 @@ class SmokeSensor(BinarySensorDevice):
     def device_class(self) -> Optional[str]:
         return DEVICE_CLASS_SMOKE
 
+
 class BatterySensor(Entity):
     def __init__(self, data, hw):
-        self._name = data['name']
+        self._name = data['name'] + "_bat"
         self._data = data
         self._hw = hw
         self._state = None
@@ -322,6 +325,7 @@ class BatterySensor(Entity):
         meters = self._hw.get_thermometers()
         for m in meters:
             if m['id'] == self._data['id']:
+                self._name = self._data['name'] + "_bat"
                 if m['lowBattery'] == 'no':
                     self._state = 100
                 else:
