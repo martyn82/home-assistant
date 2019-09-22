@@ -20,6 +20,7 @@ class HomeWizard:
     def __init__(self, host, password):
         self._base_url = "http://{0}/{1}".format(host, password)
         self._sensors = None
+        self._status = None
         self.update()
 
     def call(self, path):
@@ -42,6 +43,7 @@ class HomeWizard:
 
     def update(self):
         self._sensors = self.call("/get-sensors")
+        self._status = self.call("/get-status")
 
     def get_thermometers(self):
         return self._sensors['response']['thermometers']
@@ -59,6 +61,9 @@ class HomeWizard:
 
     def get_lights(self):
         return self._sensors['response']['switches']
+
+    def get_preset(self):
+        return self._status['response']['preset']
 
 
 class Heatlink:

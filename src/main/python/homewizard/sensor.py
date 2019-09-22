@@ -38,7 +38,9 @@ _LOGGER = logging.getLogger(__name__)
 HUMIDITY_UNIT = '%'
 BATTERY_UNIT = '%'
 GAS_UNIT = 'm³'
+
 DEVICE_CLASS_SMOKE = "smoke"
+DEVICE_CLASS_PRESENCE = "presence"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST): cv.string,
@@ -55,6 +57,14 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     heatlink = hw.get_heatlink()
     energylink = hw.get_energylink()
     smoke = hw.get_smoke_sensor()
+
+    presets = [
+        {"id": 0, "name": "HomeWizard Home"},
+        {"id": 1, "name": "HomeWizard Away"},
+        {"id": 2, "name": "HomeWizard Sleep"},
+        {"id": 3, "name": "HomeWizard Holiday"}
+    ]
+    add_entities(Preset(preset['id'], preset['name'], hw) for preset in presets)
 
     add_entities(TemperatureSensor(data, hw) for data in thermometers)
     add_entities(HygroSensor(data, hw) for data in thermometers)
@@ -346,3 +356,43 @@ class BatterySensor(Entity):
     @property
     def device_class(self) -> Optional[str]:
         return DEVICE_CLASS_BATTERY
+
+
+class Preset(BinarySensorDevice):
+    def __init__(self, index, name, hw):
+        self._hw = hw
+        self._name = name
+        self._index = index
+        self._state = None
+        self._class = None
+        self.set()
+
+    def update(self):
+        self._hw.update()
+        self.set()
+
+    def set(self):
+        preset = self._hw.get_preset()
+
+        if preset == self._index:
+            self._state = True
+        else:
+            self._state = False
+
+        # If this preset represents HOME (index=0) it is a presence sensor
+        if self._index == 0:
+            self._class = DEVICE_CLASS_PRESENCE
+        else:
+            self._class = None
+
+    @property
+    def name(self) -> Optional[str]:
+        return self._name
+
+    @property
+    def is_on(self) -> bool:
+        return self._state
+
+    @property
+    def device_class(self) -> Optional[str]:
+        return self._class
