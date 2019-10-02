@@ -1,0 +1,8 @@
+{
+  "domain": "homewizard",
+  "name": "HomeWizard",
+  "documentation": "https://www.home-assistant.io/components/homewizard",
+  "dependencies": [],
+  "codeowners": ["@martyn82"],
+  "requirements": []
+}
