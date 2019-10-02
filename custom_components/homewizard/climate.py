@@ -10,13 +10,12 @@ from homeassistant.components.climate.const import (
 )
 from typing import List, Optional
 
-from .const import DOMAIN, SRV_GATEWAY
+from .const import DOMAIN, SRV_GATEWAY, DEFAULT_HEATLINK_NAME
 from .gateway import Gateway
 from .heatlink import Heatlink
 
 DEFAULT_MAX_TEMP = 30.0
 DEFAULT_MIN_TEMP = 7.0
-DEFAULT_NAME = "Heatlink"
 TEMPERATURE_PRECISION = 0.5
 
 
@@ -25,7 +24,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         return
 
     gw: Gateway = hass.data[DOMAIN][SRV_GATEWAY]
-    add_entities(HeatlinkDevice(DEFAULT_NAME, Heatlink(heatlink, gw)) for heatlink in gw.heatlinks)
+    add_entities(HeatlinkDevice(DEFAULT_HEATLINK_NAME, Heatlink(heatlink, gw)) for heatlink in gw.heatlinks)
 
 
 class HeatlinkDevice(ClimateDevice):

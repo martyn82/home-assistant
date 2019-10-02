@@ -46,15 +46,24 @@ class Gateway(object):
             if hl['id'] == identifier:
                 return hl
 
-    def light(self, identifier):
-        for light in self._sensors['switches']:
-            if light['id'] == identifier:
-                return light
+    def switch(self, identifier):
+        for switch in self._sensors['switches']:
+            if switch['id'] == identifier:
+                return switch
+
+    def thermometer(self, identifier):
+        for thermo in self._sensors['thermometers']:
+            if thermo['id'] == identifier:
+                return thermo
 
     @property
     def heatlinks(self):
         return self._sensors['heatlinks']
 
     @property
-    def lights(self):
+    def switches(self):
         return self._sensors['switches']
+
+    @property
+    def thermometers(self):
+        return self._sensors['thermometers']

@@ -23,7 +23,7 @@ from typing import Optional
 from .gateway import Gateway
 
 
-class Heatlink:
+class Heatlink(object):
     def __init__(self, data, gw: Gateway):
         self._id = data['id']
         self._gw = gw

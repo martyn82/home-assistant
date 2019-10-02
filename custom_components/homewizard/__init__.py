@@ -8,7 +8,7 @@ import voluptuous as vol
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN, LOGGER, CONF_TIMEOUT
+from .const import DOMAIN, LOGGER, CONF_TIMEOUT, SRV_GATEWAY
 from .gateway import Gateway
 
 DEFAULT_TIMEOUT = 30  # insanely high
@@ -48,5 +48,6 @@ def setup(hass, config):
 
         hass.helpers.discovery.load_platform('climate', DOMAIN, {}, conf)
         hass.helpers.discovery.load_platform('light', DOMAIN, {}, conf)
+        hass.helpers.discovery.load_platform('sensor', DOMAIN, {}, conf)
 
     return True

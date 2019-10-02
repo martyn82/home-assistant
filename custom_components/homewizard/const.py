@@ -8,3 +8,5 @@ DOMAIN = "homewizard"
 SRV_GATEWAY = "gateway"
 
 CONF_TIMEOUT = "timeout"
+
+DEFAULT_HEATLINK_NAME = "Heatlink"

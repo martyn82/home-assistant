@@ -11,7 +11,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         return
 
     gw: Gateway = hass.data[DOMAIN][SRV_GATEWAY]
-    add_entities(LightSwitch(light, gw) for light in gw.lights)
+    add_entities(LightSwitch(switch, gw) for switch in gw.switches)
 
 
 class LightSwitch(Light):

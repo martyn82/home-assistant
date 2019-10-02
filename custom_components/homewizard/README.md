@@ -1,27 +1,6 @@
 HomeWizard integration
 ======================
 
-## Thermo/Hygro sensors
-
-```
-Thermometer data:
-     name: str              # Name of the sensor
-     model: int             # Model indication
-     lowBattery: yes|no     # Battery indicator
-     version: float         # Version of the device
-     te: float              # Measured temperature
-     hu: float              # Measured humidity
-     te+: float             # Max. measured temp
-     te-: float             # Min. measured temp
-     te+t: time             # Time maximum temp was measured
-     te-t: time             # Time minimum temp was measured
-     hu+: float             # Max. measured humidity
-     hu-: float             # Min. measured humidity
-     hu+t: time             # Time maximum humidity was measured
-     hu-t: time             # Time minimum humidity was measured
-     outside: yes|no        # Whether the sensor is put outside (uncertain)
-```
-
 ## Energylink
 
 ```
