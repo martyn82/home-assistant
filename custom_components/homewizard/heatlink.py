@@ -1,5 +1,5 @@
 """
-Representation of the HomeWizard Heatlink device
+Representation of the HomeWizard Heatlink device.
 
 Heatlink data:
     pump: on|off        # heating pump

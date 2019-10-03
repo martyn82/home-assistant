@@ -3,22 +3,28 @@
 from typing import Optional
 
 from homeassistant.const import (
+    POWER_WATT,
     PRESSURE_BAR,
     TEMP_CELSIUS,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_HUMIDITY,
+    DEVICE_CLASS_POWER,
     DEVICE_CLASS_PRESSURE,
-    DEVICE_CLASS_TEMPERATURE
+    DEVICE_CLASS_TEMPERATURE,
+    STATE_ON,
+    STATE_OFF
 )
 from homeassistant.helpers.entity import Entity
 from homeassistant.components.binary_sensor import BinarySensorDevice
 
-from .const import DOMAIN, SRV_GATEWAY, DEFAULT_HEATLINK_NAME
+from .const import DOMAIN, SRV_GATEWAY, DEFAULT_ENERGYLINK_NAME, DEFAULT_HEATLINK_NAME
+from .energylink import Energylink
 from .gateway import Gateway
 from .heatlink import Heatlink
 from .thermo_hygro import ThermoHygrometer
 
-HUMIDITY_UNIT = "%"
+GAS_CUBIC = "m³"
+HUMIDITY_PERCENT = "%"
 
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
@@ -38,6 +44,11 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         heatlink = Heatlink(h, gw)
         entities.append(WaterTemperature(f"{DEFAULT_HEATLINK_NAME}{heatlink.identifier}", heatlink))
         entities.append(WaterPressure(f"{DEFAULT_HEATLINK_NAME}{heatlink.identifier}", heatlink))
+
+    for e in gw.energylinks:
+        energylink = Energylink(e, gw)
+        entities.append(Powermeter(f"{DEFAULT_ENERGYLINK_NAME}{energylink.identifier}", energylink))
+        entities.append(Gasmeter(f"{DEFAULT_ENERGYLINK_NAME}{energylink.identifier}", energylink))
 
     add_entities(entities)
 
@@ -95,7 +106,7 @@ class Hygrometer(Entity):
 
     @property
     def unit_of_measurement(self) -> str:
-        return HUMIDITY_UNIT
+        return HUMIDITY_PERCENT
 
     @property
     def device_class(self) -> Optional[str]:
@@ -115,6 +126,10 @@ class BatteryIndicator(BinarySensorDevice):
 
     @property
     def state(self):
+        return STATE_ON if self._meter.battery_is_low else STATE_OFF
+
+    @property
+    def is_on(self):
         return self._meter.battery_is_low
 
     @property
@@ -182,3 +197,65 @@ class WaterPressure(Entity):
     @property
     def device_class(self) -> Optional[str]:
         return DEVICE_CLASS_PRESSURE
+
+
+class Powermeter(Entity):
+    def __init__(self, name, energylink: Energylink):
+        self._energylink = energylink
+        self._name = name
+        self._state = None
+        self.set()
+
+    def update(self):
+        self._energylink.update()
+        self.set()
+
+    def set(self):
+        self._state = round(self._energylink.power_consumption, 1)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def unit_of_measurement(self):
+        return POWER_WATT
+
+    @property
+    def device_class(self) -> Optional[str]:
+        return DEVICE_CLASS_POWER
+
+
+class Gasmeter(Entity):
+    def __init__(self, name, energylink: Energylink):
+        self._energylink = energylink
+        self._name = name
+        self._state = None
+        self.set()
+
+    def update(self):
+        self._energylink.update()
+        self.set()
+
+    def set(self):
+        self._state = round(self._energylink.hour_gas_consumption, 1)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def unit_of_measurement(self):
+        return GAS_CUBIC
+
+    @property
+    def device_class(self) -> Optional[str]:
+        return DEVICE_CLASS_POWER

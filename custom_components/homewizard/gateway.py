@@ -41,15 +41,27 @@ class Gateway(object):
         response = self.api("/get-sensors")
         self._sensors = response['response']
 
+    @property
+    def heatlinks(self):
+        return self._sensors['heatlinks']
+
     def heatlink(self, identifier):
         for hl in self._sensors['heatlinks']:
             if hl['id'] == identifier:
                 return hl
 
+    @property
+    def switches(self):
+        return self._sensors['switches']
+
     def switch(self, identifier):
         for switch in self._sensors['switches']:
             if switch['id'] == identifier:
                 return switch
+
+    @property
+    def thermometers(self):
+        return self._sensors['thermometers']
 
     def thermometer(self, identifier):
         for thermo in self._sensors['thermometers']:
@@ -57,13 +69,10 @@ class Gateway(object):
                 return thermo
 
     @property
-    def heatlinks(self):
-        return self._sensors['heatlinks']
+    def energylinks(self):
+        return self._sensors['energylinks']
 
-    @property
-    def switches(self):
-        return self._sensors['switches']
-
-    @property
-    def thermometers(self):
-        return self._sensors['thermometers']
+    def energylink(self, identifier):
+        for el in self._sensors['enegerylinks']:
+            if el['id'] == identifier:
+                return el
