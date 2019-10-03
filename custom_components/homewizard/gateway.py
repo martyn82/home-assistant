@@ -6,7 +6,14 @@ from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from urllib.error import URLError, HTTPError
 from urllib.request import Request, urlopen
 
-from .const import LOGGER, CONF_TIMEOUT
+from .const import (
+    LOGGER,
+    CONF_TIMEOUT,
+    PRESET_HOME,
+    PRESET_AWAY,
+    PRESET_SLEEP,
+    PRESET_HOLIDAY
+)
 
 
 class Gateway(object):
@@ -46,7 +53,7 @@ class Gateway(object):
         return self._sensors['heatlinks']
 
     def heatlink(self, identifier):
-        for hl in self._sensors['heatlinks']:
+        for hl in self.heatlinks:
             if hl['id'] == identifier:
                 return hl
 
@@ -55,7 +62,7 @@ class Gateway(object):
         return self._sensors['switches']
 
     def switch(self, identifier):
-        for switch in self._sensors['switches']:
+        for switch in self.switches:
             if switch['id'] == identifier:
                 return switch
 
@@ -64,7 +71,7 @@ class Gateway(object):
         return self._sensors['thermometers']
 
     def thermometer(self, identifier):
-        for thermo in self._sensors['thermometers']:
+        for thermo in self.thermometers:
             if thermo['id'] == identifier:
                 return thermo
 
@@ -73,6 +80,35 @@ class Gateway(object):
         return self._sensors['energylinks']
 
     def energylink(self, identifier):
-        for el in self._sensors['enegerylinks']:
+        for el in self.energylinks:
             if el['id'] == identifier:
                 return el
+
+    @property
+    def smoke_detectors(self):
+        sd = []
+        for s in self._sensors['kakusensors']:
+            if s['type'] == "smoke":
+                sd.append(s)
+        return sd
+
+    def smoke_detector(self, identifier):
+        for s in self.smoke_detectors:
+            if s['id'] == identifier:
+                return s
+
+    @property
+    def presets(self):
+        return [
+            {"id": PRESET_HOME, "name": "HomeWizard Home"},
+            {"id": PRESET_AWAY, "name": "HomeWizard Away"},
+            {"id": PRESET_SLEEP, "name": "HomeWizard Sleep"},
+            {"id": PRESET_HOLIDAY, "name": "HomeWizard Holiday"}
+        ]
+
+    @property
+    def active_preset(self) -> int:
+        return self._sensors['preset']
+
+    def set_preset(self, identifier):
+        self.api(f"/preset/{identifier}")

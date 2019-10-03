@@ -15,9 +15,15 @@ from homeassistant.const import (
     STATE_OFF
 )
 from homeassistant.helpers.entity import Entity
-from homeassistant.components.binary_sensor import BinarySensorDevice
+from homeassistant.components.binary_sensor import BinarySensorDevice, DEVICE_CLASS_PRESENCE, DEVICE_CLASS_SMOKE
 
-from .const import DOMAIN, SRV_GATEWAY, DEFAULT_ENERGYLINK_NAME, DEFAULT_HEATLINK_NAME
+from .const import (
+    DOMAIN,
+    SRV_GATEWAY,
+    DEFAULT_ENERGYLINK_NAME,
+    DEFAULT_HEATLINK_NAME,
+    PRESET_HOME
+)
 from .energylink import Energylink
 from .gateway import Gateway
 from .heatlink import Heatlink
@@ -49,6 +55,12 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         energylink = Energylink(e, gw)
         entities.append(Powermeter(f"{DEFAULT_ENERGYLINK_NAME}{energylink.identifier}", energylink))
         entities.append(Gasmeter(f"{DEFAULT_ENERGYLINK_NAME}{energylink.identifier}", energylink))
+
+    for s in gw.smoke_detectors:
+        entities.append(SmokeDetector(s, gw))
+
+    for p in gw.presets:
+        entities.append(Preset(p, gw))
 
     add_entities(entities)
 
@@ -215,7 +227,7 @@ class Powermeter(Entity):
 
     @property
     def name(self):
-        return self._name
+        return self._name + "_watt"
 
     @property
     def state(self):
@@ -242,11 +254,11 @@ class Gasmeter(Entity):
         self.set()
 
     def set(self):
-        self._state = round(self._energylink.hour_gas_consumption, 1)
+        self._state = round(self._energylink.hour_gas_consumption, 2)
 
     @property
     def name(self):
-        return self._name
+        return self._name + "_gas"
 
     @property
     def state(self):
@@ -259,3 +271,71 @@ class Gasmeter(Entity):
     @property
     def device_class(self) -> Optional[str]:
         return DEVICE_CLASS_POWER
+
+
+class SmokeDetector(BinarySensorDevice):
+    def __init__(self, data, gw: Gateway):
+        self._gw = gw
+        self._id = data['id']
+        self._data = data
+        self._name = None
+        self._state = None
+        self.set()
+
+    def update(self):
+        self._gw.update()
+        self.set()
+
+    def set(self):
+        self._data = self._gw.smoke_detector(self._id)
+        self._name = self._data['name']
+        self._state = True if self._data['status'] is not None else False
+
+    @property
+    def state(self):
+        return STATE_ON if self._state else STATE_OFF
+
+    @property
+    def is_on(self) -> bool:
+        return self._state
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def device_class(self):
+        return DEVICE_CLASS_SMOKE
+
+
+class Preset(BinarySensorDevice):
+    def __init__(self, data, gw: Gateway):
+        self._gw = gw
+        self._id = data['id']
+        self._name = data['name']
+        self._state = None
+        self._class = DEVICE_CLASS_PRESENCE if self._id == PRESET_HOME else None
+        self.set()
+
+    def update(self):
+        self._gw.update()
+        self.set()
+
+    def set(self):
+        self._state = STATE_ON if self._gw.active_preset == self._id else STATE_OFF
+
+    @property
+    def name(self) -> Optional[str]:
+        return self._name
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def is_on(self):
+        return self._state == STATE_ON
+
+    @property
+    def device_class(self):
+        return self._class
