@@ -15,7 +15,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
 
 class LightSwitch(Light):
-    def __init__(self, data, gw):
+    def __init__(self, data, gw: Gateway):
         self._gw = gw
         self._data = data
         self._id = data['id']
@@ -29,7 +29,7 @@ class LightSwitch(Light):
 
     def update(self):
         self._gw.update()
-        self._data = self._gw.light(self._id)
+        self._data = self._gw.switch(self._id)
         self.set()
 
     @property

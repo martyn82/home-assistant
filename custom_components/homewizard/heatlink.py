@@ -66,7 +66,7 @@ class Heatlink(object):
         return self._data['wte']
 
     @property
-    def fault_code(self) -> Optional[int]:
+    def error_code(self) -> Optional[int]:
         if self._data['ofc'] == 0:
             return None
         else:
