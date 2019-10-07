@@ -24,7 +24,7 @@ DEFAULT_TIMEOUT = 30  # insanely high
 
 CONF_GATEWAY = "gateway"
 ATTR_NAME = "name"
-ATTR_PRESET_ID = "preset_id"
+ATTR_ID = "id"
 
 CONFIG_SCHEMA = vol.Schema({
     DOMAIN: vol.Schema({
@@ -57,9 +57,13 @@ def setup(hass, config):
 
         hass.data[DOMAIN][SRV_GATEWAY] = gw
 
+        # Platforms
+
         hass.helpers.discovery.load_platform('climate', DOMAIN, {}, conf)
         hass.helpers.discovery.load_platform('light', DOMAIN, {}, conf)
         hass.helpers.discovery.load_platform('sensor', DOMAIN, {}, conf)
+
+        # Services
 
         def handle_set_preset(call):
             """Handle the set_preset service call"""
@@ -72,5 +76,17 @@ def setup(hass, config):
             return True
 
         hass.services.register(DOMAIN, 'set_preset', handle_set_preset)
+
+        def handle_test_smoke_detector(call):
+            """Handle the test_smoke_detector service call"""
+            id = call.data.get(ATTR_ID, None)
+            if id is None:
+                return False
+
+            gw: Gateway = hass.data[DOMAIN][SRV_GATEWAY]
+            gw.test_smoke_detector(id)
+            return True
+
+        hass.services.register(DOMAIN, 'test_smoke_detector', handle_test_smoke_detector)
 
     return True

@@ -107,3 +107,8 @@ class Gateway(object):
             if p['name'] == name:
                 self.api(f"/preset/{p['id']}")
                 break
+
+    def test_smoke_detector(self, identifier):
+        for s in self.smoke_detectors:
+            if s['id'] == identifier:
+                self.api(f"/kks/testsmoke/{identifier}")
