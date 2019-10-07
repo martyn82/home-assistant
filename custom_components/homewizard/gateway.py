@@ -9,10 +9,7 @@ from urllib.request import Request, urlopen
 from .const import (
     LOGGER,
     CONF_TIMEOUT,
-    PRESET_HOME,
-    PRESET_AWAY,
-    PRESET_SLEEP,
-    PRESET_HOLIDAY
+    PRESETS
 )
 
 
@@ -99,16 +96,14 @@ class Gateway(object):
 
     @property
     def presets(self):
-        return [
-            {"id": PRESET_HOME, "name": "HomeWizard Home"},
-            {"id": PRESET_AWAY, "name": "HomeWizard Away"},
-            {"id": PRESET_SLEEP, "name": "HomeWizard Sleep"},
-            {"id": PRESET_HOLIDAY, "name": "HomeWizard Holiday"}
-        ]
+        return PRESETS
 
     @property
     def active_preset(self) -> int:
         return self._sensors['preset']
 
-    def set_preset(self, identifier):
-        self.api(f"/preset/{identifier}")
+    def set_preset(self, name):
+        for p in self.presets:
+            if p['name'] == name:
+                self.api(f"/preset/{p['id']}")
+                break
