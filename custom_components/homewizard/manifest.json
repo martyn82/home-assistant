@@ -1,7 +1,7 @@
 {
   "domain": "homewizard",
   "name": "HomeWizard",
-  "documentation": "https://www.home-assistant.io/components/homewizard",
+  "documentation": "https://github.com/martyn82/home-assistant",
   "dependencies": [],
   "codeowners": ["@martyn82"],
   "requirements": []
