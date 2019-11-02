@@ -39,8 +39,9 @@ class ThermoHygrometer(object):
         return self._data['name']
 
     @property
-    def temperature(self):
-        return self._data['te']
+    def temperature(self) -> int:
+        if 'te' in self._data:
+            return self._data['te']
 
     @property
     def humidity(self):
